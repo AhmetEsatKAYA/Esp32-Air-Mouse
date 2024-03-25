@@ -3,14 +3,11 @@
 #include <Wire.h>
 #include <BleMouse.h>
 Adafruit_MPU6050 mpu;
-BleMouse bleMouse;
+BleMouse bleMouse("ESP BLE Mouse");
 
 float accX, gyrZ;
 int moveX, moveY;
-bool state = 0;
-bool flag = 0;
-bool states = 0;
-bool flags = 0;
+bool state = 0, flag = 0, hdurum = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -25,30 +22,37 @@ void setup() {
       delay(10);
     }
   }
-  Serial.println("MPU6050 OK.");
-  Serial.println("BLE Mouse...");
+  Serial.println("MPU6050 OK.\nBLE Mouse...");
   bleMouse.begin();
-  Serial.println("BLE Mouse OK!");
+  Serial.println("BLE Mouse begin OK!\nWaiting connection");
+  while (!bleMouse.isConnected()) {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println("\nBLE Mouse connect OK!");
 }
 
 void loop() {
-  if(bleMouse.isConnected()) {
+  if (bleMouse.isConnected()) {
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
-    accX = a.acceleration.x;
+    accX = a.gyro.x;
     gyrZ = g.gyro.z;
-    moveX = map(accX, -10, 10, -127, 127) * 1;
+    moveX = map(accX, -10, 10, -127, 127) * 1,25;
     moveY = map(gyrZ, -10, 10, -127, 127) * 1,25;
     if(moveX == 0 && moveY == 0) {
       Serial.println("No move");
     }
     else {
-      bleMouse.move(moveY, moveX);
-      Serial.print(moveX);
-      Serial.print(", ");
-      Serial.println(moveY);
+      hdurum = digitalRead(15);
+      if (hdurum == 1) {
+        bleMouse.move(moveY, moveX);
+      }
+      else {
+        Serial.print("Hold the button! ");
+      }
+      Serial.print(String(moveX) + ", " + String(moveY) + "\n");
     }
-    //sol tık
     state = digitalRead(4);
     if (state == 1 && flag == 0) {
       bleMouse.click(MOUSE_LEFT);
@@ -57,15 +61,6 @@ void loop() {
     else if (state == 0 && flag == 1) {
       flag = 0;
     }
-    //sağ tık
-    states = digitalRead(15);
-    if (states == 1 && flags == 0) {
-      bleMouse.click(MOUSE_RIGHT);
-      flags = 1;
     }
-    else if (states == 0 && flags == 1) {
-      flags = 0;
-    }
-    delay(10);
-  }
+    delay(20);
 }
