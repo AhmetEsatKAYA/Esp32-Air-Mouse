@@ -9,3 +9,4 @@ DİKKAT: Butonları yerleştirirken 10K direnci unutmayın
 scl: d22
 
 sda: d21
+![image](esp.png)
